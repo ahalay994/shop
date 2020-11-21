@@ -1,0 +1,8 @@
+# PhpStorm #
+.idea/
+
+# Database #
+.mysql/
+
+# Logs #
+logs/

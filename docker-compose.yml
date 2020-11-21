@@ -1,0 +1,71 @@
+version: "3.8"
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: shop-nginx
+    restart: on-failure
+    tty: true
+    ports:
+      - 8090:80
+      - 443:443
+    depends_on:
+      - php
+      - mysql
+    networks:
+      - backend
+    links:
+      - php
+      - mysql
+    volumes:
+      - ./code/:/var/www/html/
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+      - ./logs/nginx/error.log:/var/log/nginx/error.log
+      - ./logs/nginx/access.log:/var/log/nginx/access.log
+
+  php:
+    container_name: shop-php
+    build:
+      args:
+        user: admin
+        uid: 1000
+      context: ./php/
+      dockerfile: Dockerfile
+    restart: on-failure
+    networks:
+      - backend
+    volumes:
+      - ./code/:/var/www/html/
+      - ./php/php.ini:/usr/local/etc/php/php.ini
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: shop-db
+    image: mysql:8.0.22
+    restart: on-failure
+    networks:
+      - backend
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - .mysql:/var/lib/mysql
+    ports:
+      - ${DB_PORT}:3306
+
+  adminer:
+    image: adminer:4.7.7-standalone
+    container_name: shop-adminer
+    restart: on-failure
+    ports:
+      - 8081:8080
+    depends_on:
+      - mysql
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
